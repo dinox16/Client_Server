@@ -1,0 +1,292 @@
+================================================================================
+           HUONG DAN THUC HIEN DO AN MANG MAY TINH
+        HE THONG CHAT CLIENT-SERVER LAN VOI MA HOA E2EE
+================================================================================
+
+I. GIOI THIEU DO AN
+-------------------
+Do an xay dung ung dung chat tren mang LAN voi cac tinh nang:
+- Chat giua nhieu client qua server
+- Ma hoa end-to-end (E2EE) bao ve tin nhan
+- Blockchain luu lich su tin nhan
+- Mo phong tan cong malware
+- Co che bao ve chong doc trom du lieu
+
+II. CAU TRUC THU MUC
+--------------------
+Client_Server/
+├── README.md                      # Gioi thieu du an
+├── requirements.txt               # Thu vien can thiet
+├── HUONG_DAN_THUC_HIEN.txt       # File nay
+├── server/
+│   └── server.py                 # Server chat
+├── client/
+│   ├── client.py                 # Client chat
+│   ├── encryption.py             # Module ma hoa
+│   └── blockchain.py             # Module blockchain
+├── security/
+│   ├── malware_simulation.py     # Mo phong tan cong
+│   └── defense_demo.py           # Demo bao ve
+├── demo/
+│   ├── run_demo.py               # Chay demo day du
+│   └── attack_scenario.py        # Kich ban tan cong
+└── tests/
+    ├── test_encryption.py        # Test ma hoa
+    └── test_blockchain.py        # Test blockchain
+
+III. CAI DAT
+------------
+1. Cai dat Python 3.8 tro len
+
+2. Cai dat thu vien:
+   pip install pycryptodome
+
+3. Clone repository:
+   git clone https://github.com/dinox16/Client_Server.git
+   cd Client_Server
+
+IV. CACH CHAY CHUONG TRINH
+---------------------------
+
+A. DEMO CO BAN
+--------------
+1. Mo terminal thu nhat, chay server:
+   cd server
+   python server.py
+   
+   Output mong doi:
+   [SERVER] Dang lang nghe tai 0.0.0.0:5555
+
+2. Mo terminal thu hai, chay client Alice:
+   cd client
+   python
+   >>> from client import SecureChatClient
+   >>> alice = SecureChatClient("Alice")
+   >>> alice.connect("127.0.0.1", 5555)
+   
+   Output:
+   [ALICE] Da ket noi den server
+   [ALICE] Danh sach users online: ['Alice']
+
+3. Mo terminal thu ba, chay client Bob:
+   cd client
+   python
+   >>> from client import SecureChatClient
+   >>> bob = SecureChatClient("Bob")
+   >>> bob.connect("127.0.0.1", 5555)
+   
+   Output:
+   [BOB] Da ket noi den server
+   [BOB] Danh sach users online: ['Alice', 'Bob']
+
+4. Alice gui tin nhan cho Bob:
+   >>> alice.send_message("Bob", "Xin chao Bob!")
+   
+   Terminal cua Bob hien thi:
+   [Alice]: Xin chao Bob!
+
+5. Bob tra loi:
+   >>> bob.send_message("Alice", "Chao Alice! Ban khoe khong?")
+   
+   Terminal cua Alice hien thi:
+   [Bob]: Chao Alice! Ban khoe khong?
+
+B. DEMO TU DONG (DE DANH)
+--------------------------
+python demo/run_demo.py
+
+Se tu dong:
+- Khoi dong server
+- Tao 3 clients (Alice, Bob, Charlie)
+- Gui cac tin nhan mau
+- Hien thi blockchain
+- Kiem tra integrity
+
+C. DEMO TAN CONG MALWARE
+-------------------------
+python demo/attack_scenario.py
+
+Kich ban:
+1. Alice va Bob ket noi
+2. Malware chiem quyen may Alice
+3. Bob gui tin nhan nhay cam: "Mat khau ngan hang: 123456"
+4. Malware intercept packet
+5. KET QUA: Malware CHI thay ciphertext, KHONG doc duoc plaintext
+6. Alice van doc duoc binh thuong
+
+V. KIEN TRUC HE THONG
+---------------------
+
+A. QUY TRINH GUI TIN NHAN
+-------------------------
+Alice                    Server                    Bob
+  |                         |                        |
+  | 1. Ma hoa tin nhan      |                        |
+  |    bang public key Bob  |                        |
+  |                         |                        |
+  | 2. Ky bang private key  |                        |
+  |    cua Alice            |                        |
+  |                         |                        |
+  | 3. Gui encrypted packet |                        |
+  |------------------------>|                        |
+  |                         | 4. Chuyen tiep         |
+  |                         |----------------------->|
+  |                         |                        | 5. Giai ma bang
+  |                         |                        |    private key Bob
+  |                         |                        |
+  |                         |                        | 6. Xac thuc chu ky
+  |                         |                        |    cua Alice
+
+B. MA HOA HYBRID (RSA + AES)
+----------------------------
+Plain Message: "Xin chao"
+      |
+      v
+1. Tao AES key ngau nhien (32 bytes)
+      |
+      v
+2. Ma hoa message bang AES-256-EAX
+   Cipher: "8f3a9b..."
+      |
+      v
+3. Ma hoa AES key bang RSA public key cua nguoi nhan
+   Encrypted Key: "a7d2c1..."
+      |
+      v
+4. Ky message hash bang RSA private key cua nguoi gui
+   Signature: "3e8f74..."
+      |
+      v
+Packet: {
+  encrypted_aes_key: "a7d2c1...",
+  ciphertext: "8f3a9b...",
+  signature: "3e8f74...",
+  nonce: "...",
+  tag: "..."
+}
+
+C. BLOCKCHAIN CUA TIN NHAN
+--------------------------
+Block 0: Genesis Block
+  |
+  v
+Block 1:
+  Index: 1
+  Data: {from: "Alice", to: "Bob", message: "Xin chao"}
+  Previous Hash: 00a3f2...
+  Hash: 00b7e5...
+  Nonce: 142
+  |
+  v
+Block 2:
+  Index: 2
+  Data: {from: "Bob", to: "Alice", message: "Chao ban"}
+  Previous Hash: 00b7e5...
+  Hash: 00c2a9...
+  Nonce: 87
+
+VI. CAC TINH NANG BAO MAT
+--------------------------
+
+A. END-TO-END ENCRYPTION (E2EE)
+-------------------------------
+- Tin nhan duoc ma hoa TRUOC KHI gui qua mang
+- Server chi thay ciphertext, KHONG the doc plaintext
+- Chi nguoi nhan co private key moi giai ma duoc
+
+Chung minh:
+1. Bat goi tin tren Wireshark
+2. Chi thay hex data ma hoa
+3. Khong the doc noi dung
+
+B. DIGITAL SIGNATURE
+--------------------
+- Moi tin nhan duoc ky boi nguoi gui
+- Nguoi nhan xac thuc chu ky truoc khi hien thi
+- Ngan chan gia mao tin nhan
+
+Chung minh:
+1. Thu sua doi tin nhan tren duong truyen
+2. Chu ky khong hop le
+3. Client tu choi hien thi
+
+C. BLOCKCHAIN INTEGRITY
+-----------------------
+- Moi tin nhan luu thanh 1 block
+- Block lien ket voi nhau bang hash
+- Khong the sua doi lich su
+
+Chung minh:
+1. Xem blockchain: client.blockchain.print_chain()
+2. Thu sua block cu: chain[1].data = "hack"
+3. Kiem tra: is_chain_valid() tra ve False
+
+D. PHONG CHONG MALWARE
+----------------------
+Ngay ca khi may bi chiem quyen, attacker van KHONG THE:
+- Doc plaintext message (khong co private key)
+- Gia mao tin nhan (khong the tao chu ky hop le)
+- Sua lich su chat (blockchain phat hien thay doi)
+
+VII. CAC TEST CASE
+------------------
+
+A. Test ma hoa
+--------------
+cd tests
+python test_encryption.py
+
+Kiem tra:
+- Tao key pair thanh cong
+- Ma hoa va giai ma dung
+- Chu ky so hop le
+- Phat hien chu ky gia mao
+
+B. Test blockchain
+------------------
+python test_blockchain.py
+
+Kiem tra:
+- Tao block thanh cong
+- Mining Proof of Work
+- Validate chain
+- Phat hien tampering
+
+VIII. MO RONG (NEU CO THOI GIAN)
+---------------------------------
+1. Luu private key trong USB security key (HSM)
+2. Certificate Pinning cho server
+3. Perfect Forward Secrecy (PFS)
+4. Group chat voi nhieu nguoi
+5. GUI bang Tkinter hoac PyQt
+
+IX. CAU HOI THUONG GAP
+-----------------------
+
+Q: Tai sao dung ca RSA va AES?
+A: RSA cham nhung bao mat, AES nhanh. Ket hop hai cai de co ca toc do va bao mat.
+
+Q: Blockchain o day khac Bitcoin the nao?
+A: Don gian hon, khong co consensus giua nhieu node, chi dung de luu lich su tin nhan.
+
+Q: Neu mat private key thi sao?
+A: Khong the giai ma tin nhan cu. Phai tao key pair moi.
+
+Q: Server co the doc tin nhan khong?
+A: KHONG. Tin nhan da duoc ma hoa E2EE truoc khi gui, server chi relay ciphertext.
+
+X. THAM KHAO
+------------
+- RSA Cryptosystem: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
+- AES Encryption: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+- Blockchain: https://en.wikipedia.org/wiki/Blockchain
+- End-to-End Encryption: https://en.wikipedia.org/wiki/End-to-end_encryption
+
+XI. LIEN HE
+-----------
+Neu gap van de, tao issue tren GitHub:
+https://github.com/dinox16/Client_Server/issues
+
+================================================================================
+                              CHUC BAN THANH CONG!
+================================================================================
